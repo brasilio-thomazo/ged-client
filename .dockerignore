@@ -1,0 +1,5 @@
+/data
+.bladeformatterrc
+.editorconfig
+.env.example
+.prettierrc

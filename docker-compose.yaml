@@ -1,0 +1,83 @@
+version: '3.8'
+services:
+  redis:
+    container_name: redis.client
+    image: redis:alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    networks:
+      - app-lan
+  postgres:
+    container_name: postgres.client
+    image: postgres:alpine
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
+      - POSTGRES_USER=${DB_USERNAME_SUPER:-postgres}
+      - POSTGRES_DB=${DB_DATABASE_SUPER:-postgres}
+    networks:
+      - app-lan
+  client.fpm:
+    container_name: client.fpm
+    build:
+      context: .
+      target: fpm
+    image: devoptimus/client-fpm
+    environment:
+      - UID:${UID:-1000}
+      - GID:${GID:-1000}
+
+      - APP_DEBUG:${APP_DEBUG:-true}
+      - APP_ENV:${APP_ENV:-local}
+      - APP_KEY:'base64:XdF0lbslo8M+jTII1g8QYEtUAl9mqryspXmMeZz/TSE='
+
+      - DB_SUPER_DATABASE:${DB_SUPER_DATABASE:-postgres}
+      - DB_SUPER_USERNAME:${DB_SUPER_USERNAME:-postgres}
+      - DB_SUPER_PASSWORD:${DB_SUPER_PASSWORD:-postgres}
+
+      - DB_CONNECTION:${DB_CONNECTION:-pgsql}
+      - DB_HOST:${DB_HOST:-postgres.client}
+      - DB_PORT:${DB_PORT:-5432}
+      - DB_DATABASE:${DB_DATABASE:-db_client}
+      - DB_USERNAME:${DB_USERNAME:-client}
+      - DB_PASSWORD:${DB_PASSWORD:-client}
+      - REDIS_HOST:${REDIS_HOST:-redis.client}
+      - REDIS_PORT:${REDIS_PORT:-6379}
+    volumes:
+      - .:/home/app/public_html
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-lan
+  client.nginx:
+    container_name: client.nginx
+    build:
+      context: .
+      target: nginx
+    image: devoptimus/client-nginx
+    ports:
+      - ${APP_PORT:-0}:80
+    environment:
+      - FPM_HOST="client.fpm:9000"
+    depends_on:
+      - client.fpm
+    volumes:
+      - ./public:/home/app/public_html/public
+    networks:
+      - app-lan
+  client.node:
+    container_name: client.node
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: node
+    image: devoptimus/client-node
+    ports:
+      - 3010:3010
+    volumes:
+      - .:/home/app/public_html
+      - ./node_modules:/home/app/public_html/node_modules
+    command: ['npm', 'run', 'dev']
+    networks:
+      - app-lan
+networks:
+  app-lan:

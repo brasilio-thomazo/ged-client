@@ -1,0 +1,19 @@
+#!/bin/bash
+set -eu
+
+current_uid=$(id -u "app")
+current_gid=$(id -g "app")
+
+if [ "$current_uid" -ne "$UID" ]; then
+    doas usermod -u $UID app
+    doas find /home/app -not -user $UID -exec doas chown -h app {} \;
+fi
+
+if [ "$current_gid" -ne "$GID" ]; then
+    doas groupmod -g $GID app
+    doas find /home/app -not -group $GID -exec doas chgrp -h app {} \;
+fi
+
+php artisan config:cache
+
+doas php-fpm -e -y /etc/php/fpm/php-fpm.ini

@@ -89,7 +89,7 @@ class Install extends Command
                     'phone' => '',
                     'email' => 'postmaster@localhost',
                     'username' => 'system',
-                    'password' => 'system'
+                    'password' => config('install.system.password')
                 ],
                 'group' => [$groups['Administradores']]
             ],
@@ -101,7 +101,7 @@ class Install extends Command
                     'phone' => '',
                     'email' => 'admin@localhost',
                     'username' => 'admin',
-                    'password' => 'admin'
+                    'password' => config('install.admin.password')
                 ],
                 'group' => [$groups['Administradores']]
             ],

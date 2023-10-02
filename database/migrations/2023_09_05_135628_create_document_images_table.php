@@ -16,7 +16,8 @@ return new class extends Migration
             $table->id();
             $table->foreignUuid('document_id')->constrained();
             $table->string('filename');
-            $table->enum('storage_type', array_column(StorageType::cases(), 'value'));
+            $table->unsignedInteger('page');
+            $table->integer('storage_type');
             $table->unsignedBigInteger('created_at');
             $table->unsignedBigInteger('updated_at');
             $table->unsignedBigInteger('deleted_at')->nullable();

@@ -33,9 +33,9 @@ class Document extends Model
 
     protected $dateFormat = 'U';
 
-    public function images(): HasMany
+    public function documentImages(): HasMany
     {
-        return $this->hasMany(DocImage::class);
+        return $this->hasMany(DocumentImage::class);
     }
 
     public function documentType(): BelongsTo

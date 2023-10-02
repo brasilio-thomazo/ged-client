@@ -21,7 +21,7 @@
       </div>
       <div class="line">
         <label for="entity">Identificador:</label>
-        <input type="text" id="entity" v-model="form.entity" />
+        <input type="text" id="entity" v-model="form.code" />
       </div>
       <div v-if="props.fields.identity" class="line">
         <label for="identity">CPF/CNPJ:</label>
@@ -78,7 +78,7 @@ const emit = defineEmits<{ (e: 'search', form: SearchRequest): void }>()
 const init: SearchRequest = {
   department_id: 0,
   document_type_id: 0,
-  entity: '',
+  code: '',
   identity: '',
   name: '',
   comment: '',

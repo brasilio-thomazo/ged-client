@@ -47,3 +47,33 @@ FROM devoptimus/nginx as nginx
 COPY resources/docker/default.template /etc/nginx/template.d/
 COPY --from=node /home/app/public_html/public /home/app/public_html/public
 WORKDIR /home/app/public_html/public
+
+#
+# Build server protobufer
+#
+FROM alpine as build
+COPY resources/golang /golang
+WORKDIR /golang
+RUN apk add --no-cache go \
+    && go mod tidy \
+    && go build -v -o duat-server .
+
+#
+# Server protobufer
+#
+FROM alpine as server
+ENV UID=1000
+ENV GID=1000
+ENV SERVER_PORT=50051
+
+COPY --from=build /golang/duat-server /usr/local/bin/
+
+RUN apk add --no-cache \
+    && addgroup app \
+    && adduser -G app -D app \
+    &&  mkdir -p /home/app/public_html/storage/app/images \
+    && chown app:app /home/app -R
+
+USER app
+WORKDIR /home/app/public_html
+CMD [ "duat-server" ]

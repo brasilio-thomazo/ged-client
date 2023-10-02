@@ -1,4 +1,4 @@
-name: client-image-publish
+name: ged-client-image-publish
 on:
   push:
     branches: ['main']
@@ -23,8 +23,8 @@ jobs:
           target: 'fpm'
           push: true
           tags: |
-            devoptimus/client-fpm:0.0.1
-            devoptimus/client-fpm:latest
+            devoptimus/ged-client-fpm:0.0.1
+            devoptimus/ged-client-fpm:latest
 
       - name: Build php-composer image
         uses: docker/build-push-action@v5
@@ -33,8 +33,8 @@ jobs:
           target: 'node'
           push: true
           tags: |
-            devoptimus/client-node:0.0.1
-            devoptimus/client-node:latest
+            devoptimus/ged-client-node:0.0.1
+            devoptimus/ged-client-node:latest
 
       - name: Build php-fpm image
         uses: docker/build-push-action@v5
@@ -43,5 +43,15 @@ jobs:
           target: 'nginx'
           push: true
           tags: |
-            devoptimus/client-nginx:0.0.1
-            devoptimus/client-nginx:latest
+            devoptimus/ged-client-nginx:0.0.1
+            devoptimus/ged-client-nginx:latest
+
+      - name: Build grpc-server image
+        uses: docker/build-push-action@v5
+        with:
+          context: '.'
+          target: 'server'
+          push: true
+          tags: |
+            devoptimus/ged-client-grpc-server:0.0.1
+            devoptimus/ged-client-grpc-server:latest

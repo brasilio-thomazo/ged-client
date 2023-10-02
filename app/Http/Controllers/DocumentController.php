@@ -29,14 +29,14 @@ class DocumentController extends Controller
         $user = auth()->user();
         $restrictions = $user->restrictions();
 
-        $builder = Document::with(['images', 'doc_type', 'department']);
+        $builder = Document::with(['documentImages', 'documentType', 'department']);
 
         if (count($restrictions['departments'])) {
             $builder->whereIn('department_id', $restrictions['departments']);
         }
 
         if (count($restrictions['types'])) {
-            $builder->whereIn('doc_type_id', $restrictions['types']);
+            $builder->whereIn('document_type_id', $restrictions['types']);
         }
 
         foreach ($request->all() as $key => $value) {
@@ -53,10 +53,10 @@ class DocumentController extends Controller
         if ($request->get('start_date')) {
             $start = $request->get('start_date');
             $end = $request->get('end_date');
-            $builder->whereBetween('doc_date', [$start, $end ? $end : now()]);
+            $builder->whereBetween('date_document', [$start, $end ? $end : now()]);
         }
 
-        $builder->orderBy('doc_date', 'desc');
+        $builder->orderBy('date_document', 'desc');
 
         return response($builder->paginate()->withQueryString());
     }

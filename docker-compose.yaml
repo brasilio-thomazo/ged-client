@@ -1,12 +1,12 @@
 version: '3.8'
 services:
-  redis:
+  redis.client:
     container_name: redis.client
     image: redis:alpine
     command: ['redis-server', '--appendonly', 'yes']
     networks:
-      - app-lan
-  postgres:
+      - network-client
+  postgres.client:
     container_name: postgres.client
     image: postgres:alpine
     environment:
@@ -14,7 +14,7 @@ services:
       - POSTGRES_USER=${DB_USERNAME_SUPER:-postgres}
       - POSTGRES_DB=${DB_DATABASE_SUPER:-postgres}
     networks:
-      - app-lan
+      - network-client
   client.fpm:
     container_name: client.fpm
     build:
@@ -44,10 +44,10 @@ services:
     volumes:
       - .:/home/app/public_html
     depends_on:
-      - redis
-      - postgres
+      - redis.client
+      - postgres.client
     networks:
-      - app-lan
+      - network-client
   client.nginx:
     container_name: client.nginx
     build:
@@ -63,7 +63,7 @@ services:
     volumes:
       - ./public:/home/app/public_html/public
     networks:
-      - app-lan
+      - network-client
   client.node:
     container_name: client.node
     build:
@@ -78,6 +78,30 @@ services:
       - ./node_modules:/home/app/public_html/node_modules
     command: ['npm', 'run', 'dev']
     networks:
-      - app-lan
+      - network-client
+  client.protobuf:
+    container_name: client.protobuf
+    build:
+      context: .
+      target: server
+    image: devoptimus/ged-client-protobuf
+    environment:
+      - UID=${UID:-1000}
+      - GID=${GID:-1000}
+      - DB_CONNECTION=${DB_CONNECTION:-pgsql}
+      - DB_HOST=${DB_HOST:-postgres.client}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_DATABASE=${DB_DATABASE:-db_client}
+      - DB_USERNAME=${DB_USERNAME:-client}
+      - DB_PASSWORD=${DB_PASSWORD:-client}
+      - SERVER_PORT=${SERVER_PORT:-50051}
+    volumes:
+      - ./images:/home/app/public_html/storage/app/images
+    networks:
+      - network-client
+    ports:
+      - ${SERVER_PORT:-50051}:${SERVER_PORT:-50051}
 networks:
-  app-lan:
+  network-client:
+    name: network-client
+    driver: bridge

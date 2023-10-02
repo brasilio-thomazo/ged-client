@@ -186,7 +186,7 @@ declare global {
   interface SearchRequest {
     department_id: number
     document_type_id: number
-    entity: string
+    code: string
     identity: string
     name: string
     comment: string
@@ -199,7 +199,7 @@ declare global {
     id: string
     document_type_id: number
     department_id: number
-    entity: string
+    code: string
     identity: string
     name: string
     comment: string

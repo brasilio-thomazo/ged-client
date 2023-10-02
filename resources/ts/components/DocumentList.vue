@@ -44,7 +44,7 @@
         <tr v-for="row in props.page.data">
           <td>{{ row.document_type.name }}</td>
           <td>{{ row.department.name }}</td>
-          <td>{{ row.entity }}</td>
+          <td>{{ row.code }}</td>
           <td>{{ row.name }}</td>
           <td>{{ mask(row.identity) }}</td>
           <td>{{ row.storage }}</td>

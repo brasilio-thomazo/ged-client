@@ -20,30 +20,27 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: '.'
-          target: 'fpm'
+          target: 'cli'
           push: true
           tags: |
-            devoptimus/ged-client-fpm:0.0.1
-            devoptimus/ged-client-fpm:latest
+            devoptimus/ged-client-cli:latest
 
-      - name: Build php-composer image
+      - name: Build fpm image
         uses: docker/build-push-action@v5
         with:
           context: '.'
-          target: 'node'
+          target: 'fpm'
           push: true
           tags: |
-            devoptimus/ged-client-node:0.0.1
-            devoptimus/ged-client-node:latest
+            devoptimus/ged-client-fpm:latest
 
-      - name: Build php-fpm image
+      - name: Build nginx image
         uses: docker/build-push-action@v5
         with:
           context: '.'
           target: 'nginx'
           push: true
           tags: |
-            devoptimus/ged-client-nginx:0.0.1
             devoptimus/ged-client-nginx:latest
 
       - name: Build grpc-server image
@@ -53,5 +50,4 @@ jobs:
           target: 'server'
           push: true
           tags: |
-            devoptimus/ged-client-grpc-server:0.0.1
             devoptimus/ged-client-grpc-server:latest

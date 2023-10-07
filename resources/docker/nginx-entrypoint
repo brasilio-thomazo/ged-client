@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -eu
+templates=$(find /etc/nginx/template.d/ -type f -name "*.template")
+for file in $templates; do
+    if [ -f "$file" ]; then
+        config_file="/etc/nginx/vhost.d/"$(basename "${file%.*}.conf")
+        envsubst "$(printf '${%s} ' $(env | cut -d'=' -f1))" < $file > $config_file
+    fi
+done
+
+exec "$@"

@@ -17,23 +17,23 @@ var port = flag.Int("port", 50051, "server port")
 
 func main() {
 	flag.Parse()
-	host := os.Getenv("DB_HOST")
-	dbport := os.Getenv("DB_PORT")
+	writerDBHost := os.Getenv("DB_WRITER_HOST")
+	writerDBPort := os.Getenv("DB_WRITER_PORT")
+	readerDBHost := os.Getenv("DB_READER_HOST")
+	readerDBPort := os.Getenv("DB_READER_PORT")
 	username := os.Getenv("DB_USERNAME")
 	password := os.Getenv("DB_PASSWORD")
 	dbname := os.Getenv("DB_DATABASE")
-	serverPort := os.Getenv("SERVER_PORT")
-	if len(serverPort) < 5 {
-		serverPort = fmt.Sprintf("%d", *port)
-	}
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password='%s' dbname=%s sslmode=disable", host, dbport, username, password, dbname)
+	serverPort := os.Getenv("GRPC_PORT")
+	writerDSN := fmt.Sprintf("host=%s port=%s user=%s password='%s' dbname=%s sslmode=disable", writerDBHost, writerDBPort, username, password, dbname)
+	readerDSN := fmt.Sprintf("host=%s port=%s user=%s password='%s' dbname=%s sslmode=disable", readerDBHost, readerDBPort, username, password, dbname)
 
-	reader, err := database.NewReader(dsn)
+	reader, err := database.NewReader(readerDSN)
 	if err != nil {
 		log.Fatalf("connect to database reader server error %v", err)
 	}
 
-	writer, err := database.NewWriter(dsn)
+	writer, err := database.NewWriter(writerDSN)
 	if err != nil {
 		log.Fatalf("connect to database writer server error %v", err)
 	}

@@ -35,7 +35,7 @@ func NewFile(name, path string) (*File, error) {
 func (f *File) Create() error {
 	_, err := os.Stat(f.Path)
 	if os.IsNotExist(err) {
-		if err := os.Mkdir(f.Path, os.ModePerm); err != nil {
+		if err := os.MkdirAll(f.Path, os.ModePerm); err != nil {
 			return err
 		}
 	}

@@ -128,39 +128,34 @@ class Install extends Command
     private function createDb()
     {
 
-        $connection = env('DB_CONNECTION', 'pgsql');
-        $super = 'super_' . env('DB_CONNECTION', 'pgsql');
-        $section = sprintf("database.connections.%s", $connection);
-        $database = config(sprintf("%s.database", $section));
-        $username = config(sprintf("%s.username", $section));
-        $password = config(sprintf("%s.password", $section));
+        $connection = config("database.default", "pgsql");
+        $section = "database.connections." . $connection;
+        $database = config($section . ".database");
+        $username = config($section . ".username");
+        $password = config($section . ".password");
 
-        $name = $database;
-        config([$database => null]);
         $querys = [];
 
         if ($connection == 'pgsql') {
             $querys['create_user'] = "CREATE USER {$username} WITH PASSWORD '$password'";
-            $querys['create_db'] = "CREATE DATABASE $name OWNER $username";
-            $querys['grant'] = "GRANT ALL PRIVILEGES ON DATABASE $name TO $username";
+            $querys['create_db'] = "CREATE DATABASE $database OWNER $username";
+            $querys['grant'] = "GRANT ALL PRIVILEGES ON DATABASE $database TO $username";
         } else {
             $querys['create_user'] = "CREATE USER '$username'@'%' IDENTIFIED BY '$password'";
-            $querys['create_db'] = "CREATE DATABASE $name";
-            $querys['grant'] = "GRANT PRIVILEGE ON $name TO '$name'@'%s'";
+            $querys['create_db'] = "CREATE DATABASE $database";
+            $querys['grant'] = "GRANT PRIVILEGE ON $database TO '$database'@'%s'";
         }
 
         foreach ($querys as $q) {
             $show = preg_replace("/('$password')$/", "'******'", $q);
             printf("RUN [%s] ... ", $show);
             try {
-                DB::connection($super)->statement($q);
+                DB::connection($connection . ".super")->statement($q);
                 print("[OK]\n");
             } catch (Exception $ex) {
                 printf("[ERROR]\n[%s]\n", $ex->getMessage());
             }
         }
-
-        config([$database => $name]);
     }
 
     private function createGroups(array $in)

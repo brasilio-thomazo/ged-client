@@ -1,107 +1,112 @@
 version: '3.8'
 services:
-  redis.client:
-    container_name: redis.client
-    image: redis:alpine
-    command: ['redis-server', '--appendonly', 'yes']
-    networks:
-      - network-client
-  postgres.client:
-    container_name: postgres.client
-    image: postgres:alpine
-    environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
-      - POSTGRES_USER=${DB_USERNAME_SUPER:-postgres}
-      - POSTGRES_DB=${DB_DATABASE_SUPER:-postgres}
-    networks:
-      - network-client
-  client.fpm:
-    container_name: client.fpm
-    build:
-      context: .
-      target: fpm
-    image: devoptimus/client-fpm
-    environment:
-      - UID:${UID:-1000}
-      - GID:${GID:-1000}
-
-      - APP_DEBUG:${APP_DEBUG:-true}
-      - APP_ENV:${APP_ENV:-local}
-      - APP_KEY:'base64:XdF0lbslo8M+jTII1g8QYEtUAl9mqryspXmMeZz/TSE='
-
-      - DB_SUPER_DATABASE:${DB_SUPER_DATABASE:-postgres}
-      - DB_SUPER_USERNAME:${DB_SUPER_USERNAME:-postgres}
-      - DB_SUPER_PASSWORD:${DB_SUPER_PASSWORD:-postgres}
-
-      - DB_CONNECTION:${DB_CONNECTION:-pgsql}
-      - DB_HOST:${DB_HOST:-postgres.client}
-      - DB_PORT:${DB_PORT:-5432}
-      - DB_DATABASE:${DB_DATABASE:-db_client}
-      - DB_USERNAME:${DB_USERNAME:-client}
-      - DB_PASSWORD:${DB_PASSWORD:-client}
-      - REDIS_HOST:${REDIS_HOST:-redis.client}
-      - REDIS_PORT:${REDIS_PORT:-6379}
-    volumes:
-      - .:/home/app/public_html
-    depends_on:
-      - redis.client
-      - postgres.client
-    networks:
-      - network-client
-  client.nginx:
-    container_name: client.nginx
-    build:
-      context: .
-      target: nginx
-    image: devoptimus/client-nginx
-    ports:
-      - ${APP_PORT:-0}:80
-    environment:
-      - FPM_HOST="client.fpm:9000"
-    depends_on:
-      - client.fpm
-    volumes:
-      - ./public:/home/app/public_html/public
-    networks:
-      - network-client
-  client.node:
-    container_name: client.node
+  redis-client:
+    container_name: redis-client
     build:
       context: .
       dockerfile: Dockerfile
-      target: node
-    image: devoptimus/client-node
-    ports:
-      - 3010:3010
-    volumes:
-      - .:/home/app/public_html
-      - ./node_modules:/home/app/public_html/node_modules
-    command: ['npm', 'run', 'dev']
-    networks:
-      - network-client
-  client.protobuf:
-    container_name: client.protobuf
+      target: cache
+    image: devoptimus/redis
+  postgres-writer:
+    container_name: postgres-writer
+    image: devoptimus/postgres
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
+      - POSTGRES_USERNAME=${DB_USERNAME_SUPER:-postgres}
+      - REPLICANT_USERNAME=replicant
+      - REPLICANT_PASSWORD=replicant
+      - LOG_STATEMENT=none
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  postgres-reader:
+    container_name: postgres-reader
+    image: devoptimus/postgres
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
+      - POSTGRES_USERNAME=${DB_USERNAME_SUPER:-postgres}
+      - REPLICANT_USERNAME=replicant
+      - REPLICANT_PASSWORD=replicant
+      - MASTER_SERVER=postgres-writer
+      - MASTER_PORT=5432
+      - SLOT_NAME=master
+      - LOG_STATEMENT=none
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      postgres-writer:
+        condition: service_healthy
+  app-install:
+    container_name: ged-client-cli
     build:
       context: .
-      target: server
-    image: devoptimus/ged-client-protobuf
-    environment:
-      - UID=${UID:-1000}
-      - GID=${GID:-1000}
-      - DB_CONNECTION=${DB_CONNECTION:-pgsql}
-      - DB_HOST=${DB_HOST:-postgres.client}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_DATABASE=${DB_DATABASE:-db_client}
-      - DB_USERNAME=${DB_USERNAME:-client}
-      - DB_PASSWORD=${DB_PASSWORD:-client}
-      - SERVER_PORT=${SERVER_PORT:-50051}
+      dockerfile: Dockerfile
+      target: cli
+    image: devoptimus/ged-client-cli
+    env_file: .env
+    command: ["php", "artisan", "app:install"]
+    depends_on:
+      postgres-writer:
+        condition: service_healthy
+      postgres-reader:
+        condition: service_healthy
+  client-fpm:
+    container_name: ged-client-fpm
+    build:
+      context: .
+      target: fpm
+    image: devoptimus/ged-client-fpm
+    env_file: .env
     volumes:
-      - ./images:/home/app/public_html/storage/app/images
-    networks:
-      - network-client
+      - ./storage/app:/home/app/public_html/storage/app
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "9000"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      postgres-writer:
+        condition: service_healthy
+      postgres-reader:
+        condition: service_healthy
+      app-install:
+        condition: service_completed_successfully
+  client-nginx:
+    container_name: ged-client-nginx
+    build:
+      context: .
+      target: nginx
+    image: devoptimus/ged-client-nginx
     ports:
-      - ${SERVER_PORT:-50051}:${SERVER_PORT:-50051}
-networks:
-  network-client:
-    name: network-client
-    driver: bridge
+      - 8010:80
+    environment:
+      - FPM_HOST="ged-client-fpm:9000"
+    depends_on:
+      client-fpm:
+        condition: service_healthy
+  client-grpc:
+    container_name: ged-client-grpc
+    build:
+      context: .
+      target: grpc
+    image: devoptimus/ged-client-grpc
+    env_file: .env
+    volumes:
+      - ./storage/app:/home/app/public_html/storage/app
+    depends_on:
+      postgres-reader:
+        condition: service_healthy
+      postgres-writer:
+        condition: service_healthy
+      app-install:
+        condition: service_completed_successfully
+    ports:
+      - 50051:50051

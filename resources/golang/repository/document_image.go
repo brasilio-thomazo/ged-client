@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"br.dev.optimus/duat/dao"
 	"br.dev.optimus/duat/model"
@@ -58,7 +59,8 @@ func (r *DocumentImageRepositoryDB) Store(ctx context.Context, stream pb.Documen
 		return status.Error(codes.Internal, err.Error())
 	}
 
-	file, err := utils.NewFile(fmt.Sprintf("%s%s", id.String(), in.ImageExt), "images")
+	uploadPath := fmt.Sprintf("%s/%s", os.Getenv("UPLOAD_IMAGE"), in.DocumentId)
+	file, err := utils.NewFile(fmt.Sprintf("%s%s", id.String(), in.ImageExt), uploadPath)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}

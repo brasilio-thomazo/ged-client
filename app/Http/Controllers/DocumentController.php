@@ -111,7 +111,7 @@ class DocumentController extends Controller
                     $pdf->addImage($page);
                     $empty = false;
                 }
-            }, $document->images->toArray());
+            }, $document->documentImages->toArray());
             if ($empty) {
                 return response('No image found for this document.', 404);
             }
@@ -119,6 +119,8 @@ class DocumentController extends Controller
             $pdf->setCompressionQuality(90);
             $pdf->writeImages($filename, true);
         }
-        return redirect("/$filename");
+        return response(file_get_contents($filename), 200, [
+            'Content-Type' => 'application/pdf'
+        ]);
     }
 }

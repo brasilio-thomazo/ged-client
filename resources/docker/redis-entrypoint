@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+filename=/etc/redis.conf
+sed -i "s/^bind .*/bind * -::*/" $filename
+# sed -i "s/loglevel notice/loglevel debug/" $filename
+sed -i "s/logfile .*/# loglogfile/" $filename
+sed -i "s/protected-mode yes/protected-mode no/" $filename
+
+exec "$@"

@@ -1,19 +1,26 @@
 #!/bin/bash
-set -eu
+set -e
 
 current_uid=$(id -u "app")
 current_gid=$(id -g "app")
 
-if [ "$current_uid" -ne "$UID" ]; then
-    doas usermod -u $UID app
-    doas find /home/app -not -user $UID -exec doas chown -h app {} \;
+if [ ! -z "$UID" ]; then
+    if [ "$current_uid" -ne "$UID" ]; then
+        doas usermod -u $UID app
+        doas find /home/app -not -user $UID -exec doas chown -h app {} \;
+    fi
 fi
 
-if [ "$current_gid" -ne "$GID" ]; then
-    doas groupmod -g $GID app
-    doas find /home/app -not -group $GID -exec doas chgrp -h app {} \;
+if [ ! -z "$GID" ]; then
+    if [ "$current_gid" -ne "$GID" ]; then
+        doas groupmod -g $GID app
+        doas find /home/app -not -group $GID -exec doas chgrp -h app {} \;
+    fi
 fi
 
-php artisan config:cache
+php artisan event:cache \
+    && php artisan route:cache \
+    && php artisan view:cache \
+    && php artisan config:cache
 
-doas php-fpm -e -y /etc/php/fpm/php-fpm.ini
+exec "$@"

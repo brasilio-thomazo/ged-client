@@ -24,3 +24,29 @@ func (r *DepartmentDAO) FindById(ctx context.Context, ID uint64) (*model.Departm
 	}
 	return data, nil
 }
+
+func (r *DepartmentDAO) FindByName(ctx context.Context, name string) (*model.Department, error) {
+	data := &model.Department{}
+	result := r.reader.WithContext(ctx).Where("name = ?", name).First(&data)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return data, nil
+}
+
+func (r *DepartmentDAO) Store(ctx context.Context, data *model.Department) (*model.Department, error) {
+	result := r.writer.WithContext(ctx).Save(data)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return data, nil
+}
+
+func (r *DepartmentDAO) GetAll(ctx context.Context) ([]model.Department, error) {
+	data := []model.Department{}
+	result := r.reader.WithContext(ctx).Find(&data)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return data, nil
+}

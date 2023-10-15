@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "br.optimus.osasco.duat.protobuf";
+option java_package = "br.dev.optimus.duat.protobuf";
 option go_package = "duat/pb";
 option objc_class_prefix = "HLW";
 

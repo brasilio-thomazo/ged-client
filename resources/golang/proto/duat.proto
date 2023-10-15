@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "br.optimus.osasco.duat.protobuf";
+option java_package = "br.dev.optimus.duat.protobuf";
 option go_package = "duat/pb";
 option objc_class_prefix = "HLW";
 
@@ -9,6 +9,8 @@ package duat;
 
 import "document.proto";
 import "document_image.proto";
+import "department.proto";
+import "document_type.proto";
 
 
 service DocumentService {
@@ -17,6 +19,26 @@ service DocumentService {
 
 service DocumentImageService {
   rpc Store(stream DocumentImageRequest) returns (DocumentImageReply);
+}
+
+service DepartmentService {
+  rpc All(EmptyRequest) returns (DepartmentListReply);
+  rpc Store(DepartmentRequest) returns (DepartmentReply);
+}
+
+service DocumentTypeService {
+  rpc All(EmptyRequest) returns (DocumentTypeListReply);
+  rpc Store(DocumentTypeRequest) returns (DocumentTypeReply);
+}
+
+message EmptyRequest {}
+
+message DepartmentRequest {
+  string name = 1;
+}
+
+message DocumentTypeRequest {
+  string name = 1;
 }
 
 message DocumentRequest {

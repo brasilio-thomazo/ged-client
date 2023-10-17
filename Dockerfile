@@ -127,19 +127,27 @@ EXPOSE 80
 #                                     SERVER                                       #
 ####################################################################################
 FROM base as build
-COPY resources/golang /golang
-WORKDIR /golang
-RUN apk add --no-cache go \
+RUN apk add --no-cache go git \
+    && git clone https://github.com/brasilio-thomazo/ged-grpc-server.git \
+    && cd ged-grpc-server \
     && go mod tidy \
-    && go build -v -o duat-server .
+    && go build -v -o hermes .
 
 ####################################################################################
 #                                      GRPC                                        #
 #                                     SERVER                                       #
 ####################################################################################
 FROM base as grpc
-ENV SERVER_PORT=50051
-COPY --from=build /golang/duat-server /usr/local/bin/
+ENV GRPC_PORT=50051
+ENV DB_WRITER_HOST=localhost
+ENV DB_WRITER_PORT=5432
+ENV DB_READER_HOST=localhost
+ENV DB_READER_PORT=5432
+ENV DB_USERNAME=postgres
+ENV DB_PASSWORD=
+ENV DB_DATABASE=postgres
+ENV UPLOAD_IMAGE=/home/app/public_html/storage/app
+COPY --from=build /ged-grpc-server/hermes /usr/local/bin/
 USER app
 WORKDIR /home/app/public_html/storage/app
-CMD [ "duat-server" ]
+CMD [ "hermes" ]

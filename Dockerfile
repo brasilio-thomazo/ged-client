@@ -127,11 +127,12 @@ EXPOSE 80
 #                                     SERVER                                       #
 ####################################################################################
 FROM base as build
-RUN apk add --no-cache go git \
-    && git clone https://github.com/brasilio-thomazo/ged-grpc-server.git \
+RUN apk add --no-cache go git
+RUN git clone https://github.com/brasilio-thomazo/ged-grpc-server.git \
     && cd ged-grpc-server \
     && go mod tidy \
     && go build -v -o hermes .
+
 
 ####################################################################################
 #                                      GRPC                                        #
@@ -146,7 +147,7 @@ ENV DB_READER_PORT=5432
 ENV DB_USERNAME=postgres
 ENV DB_PASSWORD=
 ENV DB_DATABASE=postgres
-ENV UPLOAD_IMAGE=/home/app/public_html/storage/app
+ENV APP_PATH=
 COPY --from=build /ged-grpc-server/hermes /usr/local/bin/
 USER app
 WORKDIR /home/app/public_html/storage/app

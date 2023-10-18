@@ -7,8 +7,11 @@ services:
       dockerfile: Dockerfile
       target: cache
     image: devoptimus/redis
-  postgres-writer:
-    container_name: postgres-writer
+  #
+  # database writer
+  #
+  database-writer:
+    container_name: database-writer
     image: devoptimus/postgres
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
@@ -18,31 +21,29 @@ services:
       - LOG_STATEMENT=none
     healthcheck:
       test: ["CMD", "pg_isready", "-q"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-  postgres-reader:
-    container_name: postgres-reader
+  #
+  # database reader
+  #
+  database-reader:
+    container_name: database-reader
     image: devoptimus/postgres
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
       - POSTGRES_USERNAME=${DB_USERNAME_SUPER:-postgres}
       - REPLICANT_USERNAME=replicant
       - REPLICANT_PASSWORD=replicant
-      - MASTER_SERVER=postgres-writer
+      - MASTER_SERVER=database-writer
       - MASTER_PORT=5432
       - SLOT_NAME=master
       - LOG_STATEMENT=none
     healthcheck:
       test: ["CMD", "pg_isready", "-q"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
     depends_on:
-      postgres-writer:
+      database-writer:
         condition: service_healthy
+  #
+  # app install sidecar
+  #
   app-install:
     container_name: ged-client-cli
     build:
@@ -53,10 +54,13 @@ services:
     env_file: .env
     command: ["php", "artisan", "app:install"]
     depends_on:
-      postgres-writer:
+      database-writer:
         condition: service_healthy
-      postgres-reader:
+      database-reader:
         condition: service_healthy
+  #
+  # php fpm
+  #
   client-fpm:
     container_name: ged-client-fpm
     build:
@@ -68,17 +72,16 @@ services:
       - ./storage/app:/home/app/public_html/storage/app
     healthcheck:
       test: ["CMD", "nc", "-z", "127.0.0.1", "9000"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
     depends_on:
-      postgres-writer:
+      database-writer:
         condition: service_healthy
-      postgres-reader:
+      database-reader:
         condition: service_healthy
       app-install:
         condition: service_completed_successfully
+  #
+  # ngix
+  #
   client-nginx:
     container_name: ged-client-nginx
     build:
@@ -92,19 +95,19 @@ services:
     depends_on:
       client-fpm:
         condition: service_healthy
+  #
+  # grpc server
+  #
   client-grpc:
-    container_name: ged-client-grpc
-    build:
-      context: .
-      target: grpc
-    image: devoptimus/ged-client-grpc
+    container_name: ged-grpc-server
+    image: devoptimus/ged-grpc-server
     env_file: .env
     volumes:
       - ./storage/app:/home/app/public_html/storage/app
     depends_on:
-      postgres-reader:
+      database-reader:
         condition: service_healthy
-      postgres-writer:
+      database-writer:
         condition: service_healthy
       app-install:
         condition: service_completed_successfully

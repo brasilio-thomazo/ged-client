@@ -17,7 +17,7 @@ class DocumentController extends Controller
     public function index()
     {
         $builder = Document::with(['images'])
-            ->orderBy('doc_date');
+            ->orderBy('date_document');
         return response($builder->paginate());
     }
 

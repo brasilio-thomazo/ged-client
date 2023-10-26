@@ -209,7 +209,7 @@ declare global {
     date_document: string
     created_at: string
     updated_at: string
-    image: DocumentImage
+    document_images: DocumentImage[]
     document_type: DocumentType
     department: Department
   }
@@ -217,7 +217,9 @@ declare global {
   interface DocumentImage {
     id: number
     filename: string
-    driver: string
+    disk: string
+    pages: number
+    url: string
   }
 }
 

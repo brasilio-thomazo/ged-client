@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateDocumentRequest;
 use App\Models\Document;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Imagick;
 
 class DocumentController extends Controller
@@ -99,28 +100,13 @@ class DocumentController extends Controller
         return response([], 204);
     }
 
-    public function download(Document $document)
+    public function view(Request $request, string $path)
     {
-        $filename = sprintf('cache/%s.pdf', $document->id);
-        if (!file_exists($filename)) {
-            $pdf = new Imagick();
-            $empty = true;
-            array_map(function ($img) use ($pdf, &$empty) {
-                if (file_exists($img['filename'])) {
-                    $page = new Imagick($img['filename']);
-                    $pdf->addImage($page);
-                    $empty = false;
-                }
-            }, $document->documentImages->toArray());
-            if ($empty) {
-                return response('No image found for this document.', 404);
-            }
-            $pdf->setImageFormat('pdf');
-            $pdf->setCompressionQuality(90);
-            $pdf->writeImages($filename, true);
-        }
-        return response(file_get_contents($filename), 200, [
-            'Content-Type' => 'application/pdf'
+        if (!$request->hasValidSignature()) abort(401);
+        $content = Storage::disk('local')->get($path);
+        return response($content, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
         ]);
     }
 }

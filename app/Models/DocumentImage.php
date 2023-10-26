@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentImage extends Model
 {
@@ -18,11 +18,20 @@ class DocumentImage extends Model
         'storage_type',
     ];
 
+    protected $appends = [
+        'url',
+    ];
+
     protected $hidden = [];
 
     protected $casts = [];
 
     protected $dateFormat = 'U';
+
+    public function getUrlAttribute()
+    {
+        return Storage::disk($this->disk)->temporaryUrl($this->filename, now()->addMinutes(5));
+    }
 
     public function document(): BelongsTo
     {

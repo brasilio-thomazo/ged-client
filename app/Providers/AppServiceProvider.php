@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Storage::disk('local')->buildTemporaryUrlsUsing(function ($path, $expiration) {
+            return URL::temporarySignedRoute('local.temporary', $expiration, ['path' => $path]);
+        });
     }
 }

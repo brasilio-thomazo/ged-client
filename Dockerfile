@@ -27,7 +27,7 @@ RUN apk add --no-cache --no-interactive \
     php82-mbstring php82-intl php82-iconv php82-gettext php82-gd php82-ftp \
     php82-fileinfo php82-dom php82-curl php82-ctype php82-calendar php82-bcmath \
     php82-pecl-redis php82-pecl-imagick php82-pecl-protobuf php82-pecl-mongodb \
-    php82-pecl-memcached \
+    php82-pecl-memcached php82-simplexml \
     && cp /usr/bin/php82 /usr/bin/php
 COPY resources/docker/policy.xml /etc/ImageMagick-7/policy.xml
 

@@ -1,17 +1,14 @@
 version: '3.8'
 services:
-  redis-client:
-    container_name: redis-client
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: cache
-    image: devoptimus/redis
+  redis:
+    image: redis:alpine
+    container_name: redis
+    command: ['redis-server', '--appendonly', 'yes']
   #
   # database writer
   #
-  database-writer:
-    container_name: database-writer
+  db-writer:
+    container_name: db-writer
     image: devoptimus/postgres
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
@@ -20,26 +17,32 @@ services:
       - REPLICANT_PASSWORD=replicant
       - LOG_STATEMENT=none
     healthcheck:
-      test: ["CMD", "pg_isready", "-q"]
+      test: ['CMD', 'pg_isready', '-q']
+      interval: 15s
+    volumes:
+      - ./data/db-writer:/var/lib/postgresql
   #
   # database reader
   #
-  database-reader:
-    container_name: database-reader
+  db-reader:
+    container_name: db-reader
     image: devoptimus/postgres
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
       - POSTGRES_USERNAME=${DB_USERNAME_SUPER:-postgres}
       - REPLICANT_USERNAME=replicant
       - REPLICANT_PASSWORD=replicant
-      - MASTER_SERVER=database-writer
+      - MASTER_SERVER=db-writer
       - MASTER_PORT=5432
       - SLOT_NAME=master
       - LOG_STATEMENT=none
     healthcheck:
-      test: ["CMD", "pg_isready", "-q"]
+      test: ['CMD', 'pg_isready', '-q']
+      interval: 15s
+    volumes:
+      - ./data/db-reader:/var/lib/postgresql
     depends_on:
-      database-writer:
+      db-writer:
         condition: service_healthy
   #
   # app install sidecar
@@ -52,11 +55,11 @@ services:
       target: cli
     image: devoptimus/ged-client-cli
     env_file: .env
-    command: ["php", "artisan", "app:install"]
+    command: ['php', 'artisan', 'app:install']
     depends_on:
-      database-writer:
+      db-writer:
         condition: service_healthy
-      database-reader:
+      db-reader:
         condition: service_healthy
   #
   # php fpm
@@ -71,12 +74,9 @@ services:
     volumes:
       - ./storage/app:/home/app/public_html/storage/app
     healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "9000"]
+      test: ['CMD', 'nc', '-z', '127.0.0.1', '9000']
+      interval: 15s
     depends_on:
-      database-writer:
-        condition: service_healthy
-      database-reader:
-        condition: service_healthy
       app-install:
         condition: service_completed_successfully
   #
@@ -105,10 +105,6 @@ services:
     volumes:
       - ./storage/app:/home/app/public_html/storage/app
     depends_on:
-      database-reader:
-        condition: service_healthy
-      database-writer:
-        condition: service_healthy
       app-install:
         condition: service_completed_successfully
     ports:

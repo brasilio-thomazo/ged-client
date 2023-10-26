@@ -52,7 +52,8 @@
           <td>
             <div class="buttons">
               <a
-                :href="`/document/${row.id}/download`"
+                v-for="image in row.document_images"
+                :href="image.url"
                 target="_blank"
                 rel="noopener noreferrer"
               >

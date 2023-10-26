@@ -77,3 +77,5 @@ Route::controller(DocumentImageController::class)->group(function () {
 Route::post('document/search', [DocumentController::class, 'search']);
 Route::get('document/search', [DocumentController::class, 'search'])->middleware(['auth:web']);
 Route::get('document/{document}/download', [DocumentController::class, 'download']);
+
+Route::get("view/{path}", [DocumentController::class, 'view'])->name('local.temporary');

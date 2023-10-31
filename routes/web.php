@@ -58,6 +58,15 @@ Route::controller(DocumentTypeController::class)->group(function () {
     Route::put("/type/{user}", 'update')->name('type.web.update');
 });
 
+
+Route::controller(DocumentTypeController::class)->group(function () {
+    Route::get("/document-type", 'index')->name('document.type.web.index');
+    Route::post("/document-type", 'store')->name('document.type.web.store');
+    Route::delete("/document-type", 'destroy')->name('document.type.web.destroy');
+    Route::get("/document-type/{user}", 'show')->name('document.type.web.show');
+    Route::put("/document-type/{user}", 'update')->name('document.type.web.update');
+});
+
 Route::controller(DepartmentController::class)->group(function () {
     Route::get("/department", 'index')->name('department.web.index');
     Route::post("/department", 'store')->name('department.web.store');

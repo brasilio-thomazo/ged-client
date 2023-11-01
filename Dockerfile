@@ -52,6 +52,7 @@ RUN php artisan cache:clear
 #                                                                                  #
 ####################################################################################
 FROM base as node
+ENV VITE_API_URL=/api
 RUN apk add --no-cache nodejs npm
 USER app
 WORKDIR /home/app/public_html

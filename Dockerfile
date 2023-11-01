@@ -15,6 +15,7 @@ RUN addgroup -g ${GID} app \
     && apk add --no-cache bash curl doas shadow icu-data-full tzdata musl-locales \
     && usermod -G wheel app \
     && echo 'permit nopass :wheel as root' >> /etc/doas.d/doas.conf
+
 ####################################################################################
 #                                       PHP                                        #
 #                                       BASE                                       #
@@ -29,18 +30,7 @@ RUN apk add --no-cache --no-interactive \
     php82-pecl-redis php82-pecl-imagick php82-pecl-protobuf php82-pecl-mongodb \
     php82-pecl-memcached php82-simplexml \
     && cp /usr/bin/php82 /usr/bin/php
-COPY resources/docker/policy.xml /etc/ImageMagick-7/policy.xml
-
-####################################################################################
-#                                      CACHE                                       #
-#                                                                                  #
-####################################################################################
-FROM alpine:latest as cache
-RUN apk add --no-cache redis memcached bash \
-    && echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf
-COPY resources/docker/redis-entrypoint /usr/local/bin/entrypoint
-ENTRYPOINT [ "entrypoint" ]
-CMD [ "redis-server", "/etc/redis.conf", "--appendonly", "yes", "--protected-mode", "no" ]
+COPY docker/policy.xml /etc/ImageMagick-7/policy.xml
 
 ####################################################################################
 #                                      PHP                                         #
@@ -52,7 +42,7 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
     && rm -rf composer-setup.php
 USER app
 WORKDIR /home/app/public_html
-COPY --chown=app:app . .
+COPY --chown=app:app api/ ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 RUN composer install --no-dev --prefer-dist
 RUN php artisan cache:clear
@@ -65,10 +55,9 @@ FROM base as node
 RUN apk add --no-cache nodejs npm
 USER app
 WORKDIR /home/app/public_html
-COPY --chown=app:app package.json package-lock.json tsconfig.json vite.config.ts tsconfig.node.json ./
-COPY --chown=app:app resources resources
-COPY --chown=app:app public public
+COPY --chown=app:app app/ ./
 RUN npm install && npm run build
+
 
 ####################################################################################
 #                                       PHP                                        #
@@ -78,7 +67,8 @@ FROM php as cli
 USER app
 WORKDIR /home/app/public_html
 COPY --from=composer /home/app/public_html .
-COPY --from=node /home/app/public_html/public public
+COPY --from=node /home/app/public_html/dist/assets public/assets
+COPY --from=node /home/app/public_html/dist/index.html resources/views/index.blade.php
 
 ####################################################################################
 #                                       PHP                                        #
@@ -89,13 +79,14 @@ RUN apk add --no-cache --no-interactive php82-fpm \
     && cp /usr/bin/php82 /usr/bin/php \
     && cp /usr/sbin/php-fpm82 /usr/bin/php-fpm
 
-COPY resources/docker/php-fpm.ini /etc/php/fpm/
-COPY resources/docker/www.ini /etc/php/fpm/pool.d/
-COPY resources/docker/fpm-entrypoint /usr/local/bin/entrypoint
+COPY docker/php-fpm.ini /etc/php/fpm/
+COPY docker/www.ini /etc/php/fpm/pool.d/
+COPY docker/fpm-entrypoint /usr/local/bin/entrypoint
 USER app
 WORKDIR /home/app/public_html
 COPY --chown=app:app --from=composer /home/app/public_html .
-COPY --chown=app:app --from=node /home/app/public_html/public public
+COPY --from=node /home/app/public_html/dist/assets public/assets
+COPY --from=node /home/app/public_html/dist/index.html resources/views/index.blade.php
 RUN php artisan config:clear\
     && php artisan cache:clear \
     && php artisan event:cache \
@@ -113,11 +104,11 @@ EXPOSE 9000
 FROM base as nginx
 RUN apk add --no-cache nginx gettext-envsubst \
     && mkdir -p /etc/nginx/template.d /etc/nginx/vhost.d /home/app/public_html
-COPY resources/docker/default.template /etc/nginx/template.d/
-COPY resources/docker/nginx.conf /etc/nginx/nginx.conf
-COPY resources/docker/nginx-entrypoint /usr/local/bin/entrypoint
+COPY docker/default.template /etc/nginx/template.d/
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx-entrypoint /usr/local/bin/entrypoint
 WORKDIR /home/app/public_html
-COPY --from=node /home/app/public_html/public public
+COPY --from=fpm /home/app/public_html/public public
 ENTRYPOINT [ "entrypoint" ]
 CMD [ "nginx" ]
 EXPOSE 80
@@ -127,12 +118,11 @@ EXPOSE 80
 #                                     SERVER                                       #
 ####################################################################################
 FROM base as build
-RUN apk add --no-cache go git
-RUN git clone https://github.com/brasilio-thomazo/ged-grpc-server.git \
-    && cd ged-grpc-server \
+COPY grpc /source
+WORKDIR /source
+RUN apk add --no-cache go \
     && go mod tidy \
     && go build -v -o hermes .
-
 
 ####################################################################################
 #                                      GRPC                                        #
@@ -148,7 +138,7 @@ ENV DB_USERNAME=postgres
 ENV DB_PASSWORD=
 ENV DB_DATABASE=postgres
 ENV APP_PATH=
-COPY --from=build /ged-grpc-server/hermes /usr/local/bin/
+COPY --from=build /source/hermes /usr/local/bin/
 USER app
 WORKDIR /home/app/public_html/storage/app
 CMD [ "hermes" ]

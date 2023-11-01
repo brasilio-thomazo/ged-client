@@ -1,111 +1,84 @@
-version: '3.8'
+version: "3.8"
 services:
-  redis:
+  cache:
     image: redis:alpine
-    container_name: redis
-    command: ['redis-server', '--appendonly', 'yes']
-  #
-  # database writer
-  #
+    container_name: cache
+    command: ["redis-server", "--appendonly", "yes"]
   db-writer:
+    image: devoptimus/postgres
     container_name: db-writer
-    image: devoptimus/postgres
-    environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
-      - POSTGRES_USERNAME=${DB_USERNAME_SUPER:-postgres}
-      - REPLICANT_USERNAME=replicant
-      - REPLICANT_PASSWORD=replicant
-      - LOG_STATEMENT=none
+    env_file:
+      - .env
     healthcheck:
-      test: ['CMD', 'pg_isready', '-q']
-      interval: 15s
-    volumes:
-      - ./data/db-writer:/var/lib/postgresql
-  #
-  # database reader
-  #
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   db-reader:
-    container_name: db-reader
     image: devoptimus/postgres
+    container_name: db-reader
+    env_file:
+      - .env
     environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD_SUPER:-postgres}
-      - POSTGRES_USERNAME=${DB_USERNAME_SUPER:-postgres}
-      - REPLICANT_USERNAME=replicant
-      - REPLICANT_PASSWORD=replicant
-      - MASTER_SERVER=db-writer
-      - MASTER_PORT=5432
-      - SLOT_NAME=master
-      - LOG_STATEMENT=none
+      - REPLICATION_MODE=slave
     healthcheck:
-      test: ['CMD', 'pg_isready', '-q']
-      interval: 15s
-    volumes:
-      - ./data/db-reader:/var/lib/postgresql
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     depends_on:
       db-writer:
         condition: service_healthy
-  #
-  # app install sidecar
-  #
   app-install:
-    container_name: ged-client-cli
     build:
       context: .
       dockerfile: Dockerfile
       target: cli
-    image: devoptimus/ged-client-cli
-    env_file: .env
-    command: ['php', 'artisan', 'app:install']
+    env_file:
+      - .env
+    command: ["php", "artisan", "app:install"]
     depends_on:
-      db-writer:
-        condition: service_healthy
       db-reader:
         condition: service_healthy
-  #
-  # php fpm
-  #
-  client-fpm:
-    container_name: ged-client-fpm
+  api-fpm:
     build:
       context: .
+      dockerfile: Dockerfile
       target: fpm
-    image: devoptimus/ged-client-fpm
-    env_file: .env
-    volumes:
-      - ./storage/app:/home/app/public_html/storage/app
+    container_name: api-fpm
+    env_file:
+      - .env
     healthcheck:
-      test: ['CMD', 'nc', '-z', '127.0.0.1', '9000']
-      interval: 15s
+      test: ["CMD", "nc", "-z", "127.0.0.1", "9000"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     depends_on:
       app-install:
         condition: service_completed_successfully
-  #
-  # ngix
-  #
-  client-nginx:
-    container_name: ged-client-nginx
+  grpc:
     build:
       context: .
-      target: nginx
-    image: devoptimus/ged-client-nginx
-    ports:
-      - 8010:80
-    environment:
-      - FPM_HOST="ged-client-fpm:9000"
-    depends_on:
-      client-fpm:
-        condition: service_healthy
-  #
-  # grpc server
-  #
-  client-grpc:
-    container_name: ged-grpc-server
-    image: devoptimus/ged-grpc-server
-    env_file: .env
-    volumes:
-      - ./storage/app:/home/app/public_html/storage/app
+      dockerfile: Dockerfile
+      target: grpc
+    container_name: grpc
+    env_file:
+      - .env
     depends_on:
       app-install:
         condition: service_completed_successfully
     ports:
-      - 50051:50051
+      - "50051:50051"
+  api-nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx
+    container_name: api-nginx
+    env_file:
+      - .env
+    depends_on:
+      api-fpm:
+        condition: service_healthy
+    ports:
+      - "8010:80"

@@ -50,4 +50,4 @@ jobs:
           target: 'grpc'
           push: true
           tags: |
-            devoptimus/ged-client-grpc-server:latest
+            devoptimus/ged-grpc-server:latest

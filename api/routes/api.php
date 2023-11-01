@@ -14,4 +14,4 @@ Route::apiResource('search', \App\Http\Controllers\SearchController::class)->mid
 
 Route::apiResource('document', \App\Http\Controllers\DocumentController::class)->middleware('auth:sanctum');
 Route::get('document_search', [\App\Http\Controllers\DocumentController::class, 'search'])->middleware('auth:sanctum')->name('document.search');
-Route::get("view/{path}", [DocumentController::class, 'view'])->where('path', '^[a-z0-9-]+/[a-z0-9-]{36}/[a-z0-9-]{36}\.pdf')->name('storage.temporary');
+Route::get("view/{path}", [\App\Http\Controllers\DocumentController::class, 'view'])->where('path', '^[a-z0-9-]+/[a-z0-9-]{36}/[a-z0-9-]{36}\.pdf')->name('storage.temporary');

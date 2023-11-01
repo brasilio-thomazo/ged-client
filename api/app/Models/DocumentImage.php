@@ -30,7 +30,7 @@ class DocumentImage extends Model
 
     public function getUrlAttribute()
     {
-        return Storage::disk($this->disk)->temporaryUrl($this->filename, now()->addMinutes(5));
+        return Storage::disk($this->disk)->temporaryUrl($this->filename, now()->addMinutes(15));
     }
 
     public function document(): BelongsTo

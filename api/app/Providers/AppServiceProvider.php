@@ -20,12 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Storage::buildTemporaryUrlsUsing(function (string $path, int $expiration) {
-            return URL::temporarySignedRoute(
-                'storage.temporary',
-                now()->addMinutes($expiration),
-                ['path' => $path]
-            );
+        Storage::buildTemporaryUrlsUsing(function (string $path, $expiration) {
+            return URL::temporarySignedRoute('storage.temporary', $expiration, ['path' => $path]);
         });
     }
 }

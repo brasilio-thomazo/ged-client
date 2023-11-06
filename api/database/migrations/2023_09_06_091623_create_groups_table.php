@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('groups', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->json('privilege');
+            $table->json('privileges');
             $table->json('authorities');
             $table->json('types');
             $table->json('departments');

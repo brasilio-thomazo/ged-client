@@ -22,9 +22,9 @@ class StoreSearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|unique:searches,name',
-            'fields' => 'required|array',
-            'fields.*' => 'string|in:doc_type,department,entity,identity,name,comment,storage,storage_old,doc_date'
+            'name'           => 'required|string|unique:searches,name',
+            'show_field'     => 'required|array',
+            'show_field.*.*' => 'boolean'
         ];
     }
 }

@@ -185,4 +185,15 @@ return [
         // 'Example' => App\Facades\Example::class,
     ])->toArray(),
 
+    'urls' => [
+        'subscribe' => env('URL_SUBSCRIBE')
+    ],
+
+    'passwords' => [
+        'system' => env('PASSWORD_SYSTEM'),
+        'admin' => env('PASSWORD_ADMIN'),
+        'user' => env('PASSWORD_USER'),
+    ],
+
+    'path' => env('APP_PATH', 'client')
 ];

@@ -2,15 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Department;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Console\Command;
 use App\Models\DocumentType;
-use App\Models\Group;
+use App\Models\Department;
 use App\Models\Search;
+use App\Models\Group;
 use App\Models\User;
 use Exception;
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 
 class Install extends Command
 {
@@ -47,16 +47,17 @@ class Install extends Command
         $this->call('migrate', ['--force' => ''], $buffer);
         print $buffer;
 
-        $url = config('install.subscribe.url');
+        $url = config('app.urls.subscribe');
         if ($url) {
-            $response = Http::post($url, []);
+            printf("Subscribe to %s\n", $url);
+            $response = Http::get($url);
             print_r($response->json());
         }
 
         $data_groups = [
             [
                 'name' => 'Administradores',
-                'privilege' => $rw,
+                'privileges' => $rw,
                 'authorities' => Group::makeAuthorities($rw),
                 'types' => [0],
                 'departments' => [0],
@@ -65,7 +66,7 @@ class Install extends Command
             ],
             [
                 'name' => 'Usuários',
-                'privilege' => $r_rw_document,
+                'privileges' => $r_rw_document,
                 'authorities' => Group::makeAuthorities($r_rw_document),
                 'types' => [0],
                 'departments' => [0],
@@ -74,7 +75,7 @@ class Install extends Command
             ],
             [
                 'name' => 'Clientes',
-                'privilege' => $r_document,
+                'privileges' => $r_document,
                 'authorities' => Group::makeAuthorities($r_document),
                 'types' => [0],
                 'departments' => [0],
@@ -83,7 +84,7 @@ class Install extends Command
             ]
         ];
         $groups = $this->createGroups($data_groups);
-        $departments = $this->createDepartments([['name' => 'System'], ['name' => 'Clientes']]);
+        $departments = $this->createDepartments([['name' => 'System'], ['name' => 'Administradores'], ['name' => 'Clientes']]);
         $this->createDocumentTypes([['name' => 'Documentos Públicos']]);
 
 
@@ -96,7 +97,7 @@ class Install extends Command
                     'phone' => '',
                     'email' => 'postmaster@localhost',
                     'username' => 'system',
-                    'password' => config('install.system.password')
+                    'password' => config('app.passwords.system')
                 ],
                 'group' => [$groups['Administradores']]
             ],
@@ -108,7 +109,19 @@ class Install extends Command
                     'phone' => '',
                     'email' => 'admin@localhost',
                     'username' => 'admin',
-                    'password' => config('install.admin.password')
+                    'password' => config('app.passwords.admin')
+                ],
+                'group' => [$groups['Administradores']]
+            ],
+            [
+                'data' => [
+                    'name' => config('app.path'),
+                    'identity' => '',
+                    'department_id' => $departments['Administradores'],
+                    'phone' => '',
+                    'email' => 'client@localhost',
+                    'username' => config('app.path'),
+                    'password' => config('app.passwords.user')
                 ],
                 'group' => [$groups['Administradores']]
             ],

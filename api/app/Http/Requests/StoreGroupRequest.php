@@ -22,14 +22,14 @@ class StoreGroupRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|unique:groups,name',
-            'privileges' => 'required|array',
-            'types' => 'required_with:privileges.document|array',
-            'departments' => 'required_with:privileges.document|array',
-            'searches' => 'required_with:privileges.document|array',
-            'custom' => 'array',
-            'custom.documents' => 'in:doc_type_id,department_id,identify,register,name,storage',
-            'custom.users' => 'in:username,document,id,email,department_id'
+            'name'             => 'required|string|unique:groups,name',
+            'privileges'       => 'required|array',
+            'types'            => 'required_with:privileges.document|array',
+            'departments'      => 'required_with:privileges.document|array',
+            'searches'         => 'required_with:privileges.document|array',
+            'custom'           => 'array',
+            'custom.documents' => 'in:name,department_id,identify',
+            'custom.users'     => 'in:name,department_id,identify'
         ];
     }
 }

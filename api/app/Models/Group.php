@@ -15,7 +15,7 @@ class Group extends Model
 
     protected $fillable = [
         'name',
-        'privilege',
+        'privileges',
         'authorities',
         'types',
         'departments',
@@ -26,7 +26,7 @@ class Group extends Model
     protected $hidden = [];
 
     protected $casts = [
-        'privilege' => 'array',
+        'privileges' => 'array',
         'authorities' => 'array',
         'types' => 'array',
         'departments' => 'array',

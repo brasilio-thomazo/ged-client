@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSearchRequest;
 use App\Http\Requests\UpdateSearchRequest;
+use App\Http\Requests\StoreSearchRequest;
 use App\Models\Search;
 use App\Models\User;
 

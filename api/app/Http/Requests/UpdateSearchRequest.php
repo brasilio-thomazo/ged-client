@@ -23,8 +23,8 @@ class UpdateSearchRequest extends FormRequest
     {
         return [
             'name' => 'required|string|unique:searches,name,' . $this->search->id,
-            'fields' => 'required|array',
-            'fields.*' => 'string|in:doc_type,department,entity,identity,name,comment,storage,storage_old,doc_date'
+            'show_field' => 'required|array',
+            'show_field.*.*' => 'boolean'
         ];
     }
 }

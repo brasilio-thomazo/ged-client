@@ -28,8 +28,8 @@ class UpdateGroupRequest extends FormRequest
             'departments' => 'required_with:privileges.document|array',
             'searches' => 'required_with:privileges.document|array',
             'custom' => 'array',
-            'custom.documents' => 'in:doc_type_id,department_id,identify,register,name,storage',
-            'custom.users' => 'in:username,document,id,email,department_id'
+            'custom.documents' => 'in:documents,name,department_id,identify',
+            'custom.users' => 'in:username,name,department_id,identify',
         ];
     }
 }

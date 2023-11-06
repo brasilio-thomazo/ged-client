@@ -14,8 +14,9 @@ class UserController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $builder = User::with(['groups', 'department'])->whereNot('username', '=', 'system');
-        if ($user->username != "system") $builder->whereNot('username', '=', 'admin');
+        $builder = User::with(['groups', 'department'])->whereNot('username', 'system');
+        $builder->whereNot('username', 'admin');
+        $builder->orderBy('created_at', 'desc');
         return response($builder->get());
     }
 
@@ -38,6 +39,7 @@ class UserController extends Controller
         $user->save();
         $user->groups()->attach($request->get('groups', []));
         $user->groups;
+        $user->department;
         return response($user, 201);
     }
 
@@ -46,6 +48,8 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $user->groups;
+        $user->department;
         return response($user);
     }
 
@@ -54,19 +58,26 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user)
     {
-        $fields = [
-            'name',
-            'department_id',
-            'identity',
-            'phone',
-            'email',
-            'username',
-            'password'
+        $save = [
+            'name' => $request->get('name'),
+            'department_id' => $request->get('department_id'),
+            'identity' => $request->get('identity'),
+            'phone' => $request->get('phone'),
+            'email' => $request->get('email'),
+            'username' => $request->get('username'),
         ];
 
-        $user->update($request->only($fields));
-        $user->groups()->sync($request->get('groups', []));
+        if ($request->get('password')) {
+            $save['password'] = $request->get('password');
+        }
+
+        $user->update($save);
+
+        if (!$user->groups->contains(1)) {
+            $user->groups()->sync($request->get('groups', []));
+        }
         $user->groups;
+        $user->department;
         return response($user);
     }
 

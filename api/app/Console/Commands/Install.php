@@ -44,8 +44,13 @@ class Install extends Command
 
         $this->createDb();
 
-        $this->call('migrate', ['--force' => null], $buffer);
-        print $buffer;
+        print "Running migrate\n";
+        try {
+            $this->call('migrate', ['--force' => null], $buffer);
+            print $buffer;
+        } catch (Exception $ex) {
+            print $ex->getMessage() . "\n";
+        }
 
         $url = config('app.urls.subscribe');
         if ($url) {

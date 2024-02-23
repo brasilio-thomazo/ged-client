@@ -37,6 +37,8 @@ services:
       - AWS_ACCESS_KEY_ID=null
       - AWS_SECRET_ACCESS_KEY=null
       - URL_SUBSCRIBE=http://ged-admin-nginx/api/app/9b67d22a-2c01-4a6e-8ddb-84f782f97a91/subscribe?signature=6c807c2ce4660ff5781f2cd3d0ebe5d0d5bafbf04af3a92d96efe1dfd6e17f14
+    volumes:
+      - data:/home/app/public_html/storage/app
     command: [ "php", "artisan", "app:install" ]
   api-fpm:
     image: devoptimus/ged-client-fpm
@@ -75,6 +77,8 @@ services:
       - AWS_ACCESS_KEY_ID=null
       - AWS_SECRET_ACCESS_KEY=null
       - URL_SUBSCRIBE=http://ged-admin-nginx/api/app/9b67d22a-2c01-4a6e-8ddb-84f782f97a91/subscribe?signature=6c807c2ce4660ff5781f2cd3d0ebe5d0d5bafbf04af3a92d96efe1dfd6e17f14
+    volumes:
+      - data:/home/app/public_html/storage/app
     healthcheck:
       test: [ "CMD", "nc", "-z", "127.0.0.1", "9000" ]
       interval: 5s
@@ -120,11 +124,13 @@ services:
       - AWS_ACCESS_KEY_ID=null
       - AWS_SECRET_ACCESS_KEY=null
       - URL_SUBSCRIBE=http://ged-admin-nginx/api/app/9b67d22a-2c01-4a6e-8ddb-84f782f97a91/subscribe?signature=6c807c2ce4660ff5781f2cd3d0ebe5d0d5bafbf04af3a92d96efe1dfd6e17f14
+    volumes:
+      - data:/home/app/public_html/storage/app
     depends_on:
       app-install:
         condition: service_completed_successfully
     ports:
-      - "0:50051"
+      - "31794:50051"
   api-nginx:
     image: devoptimus/ged-client-nginx
     container_name: ecodoc-client-nginx

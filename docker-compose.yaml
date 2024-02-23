@@ -1,55 +1,81 @@
 version: "3.8"
 services:
-  cache:
-    image: redis:alpine
-    container_name: cache
-    command: ["redis-server", "--appendonly", "yes"]
-  db-writer:
-    image: devoptimus/postgres
-    container_name: db-writer
-    env_file:
-      - .env
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-  db-reader:
-    image: devoptimus/postgres
-    container_name: db-reader
-    env_file:
-      - .env
-    environment:
-      - REPLICATION_MODE=slave
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      db-writer:
-        condition: service_healthy
   app-install:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: cli
-    env_file:
-      - .env
-    command: ["php", "artisan", "app:install"]
-    depends_on:
-      db-reader:
-        condition: service_healthy
+    image: devoptimus/ged-client-cli
+    networks:
+      - ecodoc_dev
+    environment:
+      - APP_NAME=ecodoc
+      - APP_ENV=local
+      - APP_PATH=ecodoc
+      - LOG_CHANNEL=stderr
+      - LOG_LEVEL=debug
+      - BROADCAST_DRIVER=log
+      - DB_CONNECTION=pgsql
+      - DB_DATABASE=ecodoc_test
+      - DB_WRITER_HOST=postgres-writer
+      - DB_WRITER_PORT=5432
+      - DB_READER_HOST=postgres-reader
+      - DB_READER_PORT=5432
+      - SESSION_DRIVER=redis
+      - CACHE_DRIVER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - FILESYSTEM_DISK=local
+      - AWS_REGION=
+      - AWS_BUCKET=
+      - APP_KEY=base64:QccChj9qx2NFUmmOAgpu71g9WuiwkQbm5vwjgJQt/5M=
+      - PASSWORD_SYSTEM=system
+      - PASSWORD_ADMIN=admin
+      - DB_SUPER_USERNAME=postgres
+      - DB_SUPER_PASSWORD=postgres
+      - DB_USERNAME=optimus
+      - DB_PASSWORD=optimus
+      - REDIS_USERNAME=null
+      - REDIS_PASSWORD=null
+      - AWS_ACCESS_KEY_ID=null
+      - AWS_SECRET_ACCESS_KEY=null
+      - URL_SUBSCRIBE=http://ged-admin-nginx/api/app/9b67d22a-2c01-4a6e-8ddb-84f782f97a91/subscribe?signature=6c807c2ce4660ff5781f2cd3d0ebe5d0d5bafbf04af3a92d96efe1dfd6e17f14
+    command: [ "php", "artisan", "app:install" ]
   api-fpm:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: fpm
-    container_name: api-fpm
-    env_file:
-      - .env
+    image: devoptimus/ged-client-fpm
+    container_name: ecodoc-fpm
+    networks:
+      - ecodoc_dev
+    environment:
+      - APP_NAME=ecodoc
+      - APP_ENV=local
+      - APP_PATH=ecodoc
+      - LOG_CHANNEL=stderr
+      - LOG_LEVEL=debug
+      - BROADCAST_DRIVER=log
+      - DB_CONNECTION=pgsql
+      - DB_DATABASE=ecodoc_test
+      - DB_WRITER_HOST=postgres-writer
+      - DB_WRITER_PORT=5432
+      - DB_READER_HOST=postgres-reader
+      - DB_READER_PORT=5432
+      - SESSION_DRIVER=redis
+      - CACHE_DRIVER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - FILESYSTEM_DISK=local
+      - AWS_REGION=
+      - AWS_BUCKET=
+      - APP_KEY=base64:QccChj9qx2NFUmmOAgpu71g9WuiwkQbm5vwjgJQt/5M=
+      - PASSWORD_SYSTEM=system
+      - PASSWORD_ADMIN=admin
+      - DB_SUPER_USERNAME=postgres
+      - DB_SUPER_PASSWORD=postgres
+      - DB_USERNAME=optimus
+      - DB_PASSWORD=optimus
+      - REDIS_USERNAME=null
+      - REDIS_PASSWORD=null
+      - AWS_ACCESS_KEY_ID=null
+      - AWS_SECRET_ACCESS_KEY=null
+      - URL_SUBSCRIBE=http://192.168.0.145:8080/api/app/9b67d22a-2c01-4a6e-8ddb-84f782f97a91/subscribe?signature=6c807c2ce4660ff5781f2cd3d0ebe5d0d5bafbf04af3a92d96efe1dfd6e17f14
     healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "9000"]
+      test: [ "CMD", "nc", "-z", "127.0.0.1", "9000" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -57,28 +83,60 @@ services:
       app-install:
         condition: service_completed_successfully
   grpc:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: grpc
-    container_name: grpc
-    env_file:
-      - .env
+    image: devoptimus/ged-grpc-server
+    container_name: ecodoc-grpc
+    networks:
+      - ecodoc_dev
+    environment:
+      - APP_NAME=ecodoc
+      - APP_ENV=local
+      - APP_PATH=ecodoc
+      - LOG_CHANNEL=stderr
+      - LOG_LEVEL=debug
+      - BROADCAST_DRIVER=log
+      - DB_CONNECTION=pgsql
+      - DB_DATABASE=ecodoc_test
+      - DB_WRITER_HOST=postgres-writer
+      - DB_WRITER_PORT=5432
+      - DB_READER_HOST=postgres-reader
+      - DB_READER_PORT=5432
+      - SESSION_DRIVER=redis
+      - CACHE_DRIVER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - FILESYSTEM_DISK=local
+      - AWS_REGION=
+      - AWS_BUCKET=
+      - APP_KEY=base64:QccChj9qx2NFUmmOAgpu71g9WuiwkQbm5vwjgJQt/5M=
+      - PASSWORD_SYSTEM=system
+      - PASSWORD_ADMIN=admin
+      - DB_SUPER_USERNAME=postgres
+      - DB_SUPER_PASSWORD=postgres
+      - DB_USERNAME=optimus
+      - DB_PASSWORD=optimus
+      - REDIS_USERNAME=null
+      - REDIS_PASSWORD=null
+      - AWS_ACCESS_KEY_ID=null
+      - AWS_SECRET_ACCESS_KEY=null
+      - URL_SUBSCRIBE=http://192.168.0.145:8080/api/app/9b67d22a-2c01-4a6e-8ddb-84f782f97a91/subscribe?signature=6c807c2ce4660ff5781f2cd3d0ebe5d0d5bafbf04af3a92d96efe1dfd6e17f14
     depends_on:
       app-install:
         condition: service_completed_successfully
     ports:
-      - "50051:50051"
+      - "0:50051"
   api-nginx:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: nginx
-    container_name: api-nginx
-    env_file:
-      - .env
+    image: devoptimus/ged-client-nginx
+    container_name: ecodoc-client-nginx
+    networks:
+      - ecodoc_dev
+    environment:
+      - FPM_HOST=ecodoc-fpm:9000
+      - VITE_API_URL=/api
     depends_on:
       api-fpm:
         condition: service_healthy
     ports:
-      - "8010:80"
+      - "0:80"
+networks:
+  ecodoc_dev:
+    external: true
